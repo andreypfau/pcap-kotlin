@@ -1,0 +1,5 @@
+package = pcap
+headers = pcap/pcap.h
+headerFilter = pcap/*
+compilerOpts = -I/usr/include/ -I/usr/include/x86_64-linux-gnu
+linkerOpts = -lpcap -L/usr/lib/x86_64-linux-gnu/
