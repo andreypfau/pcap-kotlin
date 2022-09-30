@@ -1,17 +1,18 @@
 package pcap
 
 import kotlinx.cinterop.*
+import platform.osx.*
 import platform.posix.memcpy
 import kotlin.math.min
 
-class PcapHandle(
+actual class PcapHandle(
     val handle: CPointer<pcap_t>,
 ) {
-    fun nextPacket(buf: ByteArray, offset: Int = 0, length: Int = buf.size - offset): Int = memScoped {
+    actual fun nextPacket(rawData: ByteArray, offset: Int, length: Int): Int = memScoped {
         val header = alloc<pcap_pkthdr>()
         val packet = pcap_next(handle, header.ptr)
         if (packet != null) {
-            buf.usePinned {
+            rawData.usePinned {
                 it.addressOf(offset)
                 val len = min(header.caplen, length.toUInt())
                 memcpy(it.addressOf(offset), packet, len.convert())
@@ -22,7 +23,7 @@ class PcapHandle(
         }
     }
 
-    fun sendPacket(rawData: ByteArray, offset: Int = 0, length: Int = rawData.size - offset) {
+    actual fun sendPacket(rawData: ByteArray, offset: Int, length: Int) {
         rawData.usePinned {
             require(pcap_sendpacket(handle, it.addressOf(offset).reinterpret(), length) >= 0) {
                 "Error occured in pcap_sendpacket(): ${getError()}"
@@ -30,17 +31,9 @@ class PcapHandle(
         }
     }
 
-    fun getError(): String? = pcap_geterr(handle)?.toKString()
+    actual fun getError(): String? = pcap_geterr(handle)?.toKString()
 
-    fun close() {
+    actual fun close() {
         pcap_close(handle)
-    }
-
-
-    enum class TimestampPrecision(
-        val value: Int
-    ) {
-        MICRO(0),
-        NANO(1)
     }
 }

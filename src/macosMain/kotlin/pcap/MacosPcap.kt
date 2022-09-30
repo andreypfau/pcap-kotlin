@@ -1,20 +1,19 @@
 package pcap
 
 import kotlinx.cinterop.*
+import platform.osx.*
 
-object Pcap {
-    val libVersion: String
-        get() = requireNotNull(pcap_lib_version()) {
-            "pcap not found"
-        }.toKString()
+actual object Pcap {
+    actual val libVersion: String
+        get() = requireNotNull(pcap_lib_version()).toKString()
 
-    fun lookupDev(): PcapNetworkInterface? = memScoped {
+    actual fun lookupDev(): PcapNetworkInterface? = memScoped {
         val buf = alloc<ByteVar>()
         val name = pcap_lookupdev(buf.ptr)?.toKString()
         findAllDevs().find { it.name == name }
     }
 
-    fun findAllDevs(): List<PcapNetworkInterface> = memScoped {
+    actual fun findAllDevs(): List<PcapNetworkInterface> = memScoped {
         val alldevs = alloc<CPointerVar<pcap_if_t>>()
         val errbuf = errbuf()
         val rc = pcap_findalldevs(alldevs.ptr, errbuf)
@@ -22,7 +21,7 @@ object Pcap {
         val networkInterfaces = ArrayList<PcapNetworkInterface>()
         var dev: pcap_if? = alldevs.pointed
         while (dev != null) {
-            val addresses = PcapAddress.newInstances(dev.addresses)
+            val addresses = pcapAddresses(dev.addresses)
             val networkInterface = PcapNetworkInterface(
                 dev.name?.toKString() ?: "",
                 dev.description?.toKString() ?: "",
@@ -34,7 +33,3 @@ object Pcap {
         networkInterfaces
     }
 }
-
-internal fun MemScope.errbuf() = allocArray<ByteVar>(256)
-internal fun ByteArray.hex(separator: String = "") =
-    joinToString(separator) { it.toUByte().toString(16).padStart(2, '0') }

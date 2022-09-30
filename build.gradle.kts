@@ -1,5 +1,5 @@
 plugins {
-    kotlin("multiplatform") version "1.7.20-RC"
+    kotlin("multiplatform") version "1.7.20"
     `maven-publish`
 }
 
@@ -10,13 +10,20 @@ repositories {
     mavenCentral()
 }
 
-kotlin {
-    val hostOs = System.getProperty("os.name")
-    val allTarget = false
-    val isMingw = hostOs.startsWith("Windows")
-    val isLinux = hostOs.startsWith("Linux")
-    val isMacos = hostOs.startsWith("Mac OS")
+object NativePlatform {
+    val arch = System.getProperty("os.arch")
+    val os = System.getProperty("os.name")
 
+    fun isArm() = arch.startsWith("arm") || arch.startsWith("aarch")
+    fun isX64() = arch == "x86_64" || arch == "amd64"
+    fun isWindows() = os.startsWith("Windows")
+    fun isMac() = os.startsWith("Mac") || os.startsWith("Darwin")
+    fun isLinux() = os.startsWith("Linux")
+
+    override fun toString(): String = "$os $arch"
+}
+
+kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
@@ -32,60 +39,49 @@ kotlin {
             dependsOn(commonMain)
         }
 
-        if (isMacos) {
-            macosX64()
-            macosArm64()
-
+        if (NativePlatform.isMac()) {
             val darwinMain by creating {
                 dependsOn(nativeMain)
             }
             val macosMain by creating {
                 dependsOn(darwinMain)
             }
-            val macosX64Main by getting {
-                dependsOn(macosMain)
-            }
-            val macosArm64Main by getting {
-                dependsOn(macosMain)
-            }
-        }
-
-        if (isMingw || allTarget) {
-            mingwX64()
-
-            val mingwMain by creating {
-                dependsOn(nativeMain)
-            }
-            val mingwX64Main by getting {
-                dependsOn(mingwMain)
-            }
-        }
-
-        if (isLinux || allTarget) {
-            linuxX64() {
+            macosX64 {
+                val macosX64Main by getting {
+                    dependsOn(macosMain)
+                }
                 binaries {
-                    executable()
+                    sharedLib()
                 }
             }
-//            linuxArm64()
+            macosArm64 {
+                val macosArm64Main by getting {
+                    dependsOn(macosMain)
+                }
+                binaries {
+                    sharedLib()
+                }
+            }
+        }
 
+        if (NativePlatform.isLinux()) {
             val linuxMain by creating {
                 dependsOn(nativeMain)
             }
-            val linuxX64Main by getting {
-                dependsOn(linuxMain)
-            }
-//            val linuxArm64Main by getting {
-//                dependsOn(linuxMain)
-//            }
-        }
-
-        targets.filterIsInstance(org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget::class.java).forEach {
-            it.compilations {
-                getByName("main") {
+            linuxX64 {
+                val linuxX64Main by getting {
+                    dependsOn(linuxMain)
+                }
+                binaries {
+                    sharedLib()
+                }
+                compilations.configureEach {
                     cinterops {
-                        val libpcap by creating {
-                            defFile(file("src/nativeInterop/cinterop/libpcap.def"))
+                        val pcap by creating {
+                            packageName = "pcap"
+                            defFile(file("src/nativeInterop/cinterop/pcap.def"))
+                            headers(file("src/nativeInterop/cinterop/pcap/pcap.h"))
+                            includeDirs("src/nativeInterop/cinterop/pcap")
                         }
                     }
                 }
