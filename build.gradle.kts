@@ -39,6 +39,19 @@ kotlin {
             dependsOn(commonMain)
         }
 
+        val mingwMain by creating {
+            dependsOn(nativeMain)
+        }
+        mingwX64 {
+            val mingwX64Main by getting {
+                dependsOn(mingwMain)
+            }
+            binaries {
+                sharedLib()
+                staticLib()
+            }
+        }
+
         if (NativePlatform.isMac()) {
             val darwinMain by creating {
                 dependsOn(nativeMain)
@@ -52,6 +65,7 @@ kotlin {
                 }
                 binaries {
                     sharedLib()
+                    staticLib()
                 }
             }
             macosArm64 {
@@ -60,6 +74,7 @@ kotlin {
                 }
                 binaries {
                     sharedLib()
+                    staticLib()
                 }
             }
         }
@@ -74,6 +89,7 @@ kotlin {
                 }
                 binaries {
                     sharedLib()
+                    staticLib()
                 }
                 compilations.configureEach {
                     cinterops {
