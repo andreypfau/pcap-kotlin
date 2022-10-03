@@ -35,10 +35,11 @@ kotlin {
                 implementation(kotlin("test-annotations-common"))
             }
         }
-        val mingwMain by creating {
-            dependsOn(commonMain)
-        }
+
         if (NativePlatform.isWindows()) {
+            val mingwMain by creating {
+                dependsOn(commonMain)
+            }
             mingwX64 {
                 val mingwX64Main by getting {
                     dependsOn(mingwMain)
