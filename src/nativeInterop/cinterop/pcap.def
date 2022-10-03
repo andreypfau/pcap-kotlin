@@ -1,0 +1,4 @@
+headers = pcap-bpf.h pcap.h
+compilerOpts.mingw = -IC:/npcap-sdk/Include
+staticLibraries.mingw = wpcap.lib
+libraryPaths.mingw_x64 = C:/npcap-sdk/Lib/x64

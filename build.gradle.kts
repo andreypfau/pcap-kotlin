@@ -35,26 +35,32 @@ kotlin {
                 implementation(kotlin("test-annotations-common"))
             }
         }
-        val nativeMain by creating {
+        val mingwMain by creating {
             dependsOn(commonMain)
         }
-
-        val mingwMain by creating {
-            dependsOn(nativeMain)
-        }
-        mingwX64 {
-            val mingwX64Main by getting {
-                dependsOn(mingwMain)
-            }
-            binaries {
-                sharedLib()
-                staticLib()
+        if (NativePlatform.isWindows()) {
+            mingwX64 {
+                val mingwX64Main by getting {
+                    dependsOn(mingwMain)
+                }
+                binaries {
+                    sharedLib()
+                    staticLib()
+                }
+                compilations.configureEach {
+                    cinterops {
+                        val pcap by creating {
+                            packageName = "pcap"
+                            defFile(file("src/nativeInterop/cinterop/pcap.def"))
+                        }
+                    }
+                }
             }
         }
 
         if (NativePlatform.isMac()) {
             val darwinMain by creating {
-                dependsOn(nativeMain)
+                dependsOn(commonMain)
             }
             val macosMain by creating {
                 dependsOn(darwinMain)
@@ -81,7 +87,7 @@ kotlin {
 
         if (NativePlatform.isLinux()) {
             val linuxMain by creating {
-                dependsOn(nativeMain)
+                dependsOn(commonMain)
             }
             linuxX64 {
                 val linuxX64Main by getting {
