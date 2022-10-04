@@ -82,6 +82,7 @@ kotlin {
                 binaries {
                     sharedLib()
                     staticLib()
+                    executable()
                 }
             }
         }
